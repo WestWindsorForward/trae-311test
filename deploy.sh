@@ -93,13 +93,13 @@ sleep 30
 # Check service health
 echo "🏥 Checking service health..."
 if command -v docker compose &> /dev/null; then
-  backend_healthy=$(docker compose ps backend | grep -c "healthy" || echo "0")
-  frontend_healthy=$(docker compose ps frontend | grep -c "healthy" || echo "0")
-  db_healthy=$(docker compose ps db | grep -c "healthy" || echo "0")
+  backend_healthy=$(docker compose ps backend 2>/dev/null | awk 'BEGIN{c=0} /healthy/{c++} END{print c}')
+  frontend_healthy=$(docker compose ps frontend 2>/dev/null | awk 'BEGIN{c=0} /healthy/{c++} END{print c}')
+  db_healthy=$(docker compose ps db 2>/dev/null | awk 'BEGIN{c=0} /healthy/{c++} END{print c}')
 else
-  backend_healthy=$(docker-compose ps backend | grep -c "healthy" || echo "0")
-  frontend_healthy=$(docker-compose ps frontend | grep -c "healthy" || echo "0")
-  db_healthy=$(docker-compose ps db | grep -c "healthy" || echo "0")
+  backend_healthy=$(docker-compose ps backend 2>/dev/null | awk 'BEGIN{c=0} /healthy/{c++} END{print c}')
+  frontend_healthy=$(docker-compose ps frontend 2>/dev/null | awk 'BEGIN{c=0} /healthy/{c++} END{print c}')
+  db_healthy=$(docker-compose ps db 2>/dev/null | awk 'BEGIN{c=0} /healthy/{c++} END{print c}')
 fi
 
 if [ "$backend_healthy" -eq "0" ]; then
@@ -115,7 +115,7 @@ echo "🧪 Testing API endpoint..."
 max_attempts=10
 attempt=1
 while [ $attempt -le $max_attempts ]; do
-    if curl -f http://localhost:8080/health > /dev/null 2>&1; then
+    if curl -f http://localhost:8080/api/health > /dev/null 2>&1 || curl -f http://localhost:8000/health > /dev/null 2>&1; then
         echo "✅ API is responding!"
         break
     else
