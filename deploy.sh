@@ -80,7 +80,7 @@ if command -v docker compose &> /dev/null; then
   if [ $STATUS -ne 0 ] && [ "$ARCH" = "aarch64" ]; then
     echo "⚠️  Compose failed. Retrying with amd64 default platform for compatibility..."
     export DOCKER_DEFAULT_PLATFORM=linux/amd64
-    docker compose up -d --build
+    DB_PLATFORM=linux/amd64 docker compose up -d --build
   fi
   set -e
 else

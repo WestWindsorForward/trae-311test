@@ -1,6 +1,7 @@
 services:
   db:
     image: postgis/postgis:${POSTGIS_IMAGE_TAG:-15-3.3}
+    platform: ${DB_PLATFORM:-}
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-311_user}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-311_password}
