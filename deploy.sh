@@ -82,8 +82,11 @@ if command -v docker compose &> /dev/null; then
     DOCKER_DEFAULT_PLATFORM=linux/amd64 DB_PLATFORM=linux/amd64 docker compose up -d --build
   fi
   set -e
+  # Ensure frontend profile is started so Caddy can proxy UI
+  docker compose --profile frontend up -d --build
 else
   docker-compose up -d --build
+  docker-compose --profile frontend up -d --build || true
 fi
 
 # Wait for services to be ready
