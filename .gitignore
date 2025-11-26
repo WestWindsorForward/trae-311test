@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+.env
+.env.production
+venv/
+.venv/
+node_modules/
+dist/
+coverage/
+.DS_Store
+infrastructure/postgres_data/
+infrastructure/redis_data/
+infrastructure/caddy_data/
+infrastructure/caddy_config/
+infrastructure/storage_data/
+flags/

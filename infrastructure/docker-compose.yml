@@ -1,0 +1,120 @@
+version: "3.9"
+services:
+  db:
+    image: postgis/postgis:15-3.4
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-311_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-311_password}
+      - POSTGRES_DB=${POSTGRES_DB:-township_311}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-311_user} -d ${POSTGRES_DB:-township_311} -h localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redisdata:/data
+
+  clamav:
+    image: mkodockx/docker-clamav:alpine
+    ports:
+      - "${CLAMAV_PORT:-3310}:3310"
+    volumes:
+      - clamavdb:/var/lib/clamav
+
+  backend:
+    build:
+      context: ../backend
+    environment:
+      - BACKEND_PORT=${BACKEND_PORT:-8000}
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-311_user}:${POSTGRES_PASSWORD:-311_password}@db:5432/${POSTGRES_DB:-township_311}
+      - REDIS_URL=redis://redis:6379/0
+      - CLAMAV_HOST=clamav
+      - CLAMAV_PORT=${CLAMAV_PORT:-3310}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      clamav:
+        condition: service_started
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ../backend:/app
+      - ../flags:/app/flags
+
+  frontend:
+    build:
+      context: ../frontend
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    environment:
+      - VITE_API_BASE=${VITE_API_BASE:-/api}
+    depends_on:
+      - backend
+    profiles:
+      - frontend
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "${CADDY_HTTP_PORT:-8080}:8080"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      backend:
+        condition: service_started
+
+  celery-worker:
+    build:
+      context: ../backend
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-311_user}:${POSTGRES_PASSWORD:-311_password}@db:5432/${POSTGRES_DB:-township_311}
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    command: ["celery", "-A", "app.celery_app.celery_app", "worker", "-l", "info"]
+    profiles:
+      - celery
+
+  celery-beat:
+    build:
+      context: ../backend
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-311_user}:${POSTGRES_PASSWORD:-311_password}@db:5432/${POSTGRES_DB:-township_311}
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    command: ["celery", "-A", "app.celery_app.celery_app", "beat", "-l", "info"]
+    profiles:
+      - celery
+
+volumes:
+  pgdata:
+  redisdata:
+  caddy_data:
+  caddy_config:
+  clamavdb:
+
