@@ -12,7 +12,8 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-if ! command -v docker-compose &> /dev/null; then
+if ! command -v docker compose &> /dev/null && ! command -v docker-compose &> 
+    /dev/null; then
     echo "❌ Docker Compose is not installed. Please install Docker Compose first."
     exit 1
 fi
@@ -51,15 +52,41 @@ fi
 
 # Pull latest images
 echo "📥 Pulling latest Docker images..."
-docker-compose pull
+if command -v docker compose &> /dev/null; then
+  docker compose pull
+else
+  docker-compose pull
+fi
 
 # Stop existing containers
 echo "🛑 Stopping existing containers..."
-docker-compose down --remove-orphans
+if command -v docker compose &> /dev/null; then
+  docker compose down --remove-orphans
+else
+  docker-compose down --remove-orphans
+fi
 
 # Build and start services
 echo "🏗️  Building and starting services..."
-docker-compose up -d --build
+ARCH=$(uname -m || echo "")
+if [ "$ARCH" = "aarch64" ]; then
+  echo "🧩 ARM architecture detected. Enabling multi-arch emulation..."
+  sudo docker run --privileged --rm tonistiigi/binfmt --install all || true
+fi
+
+if command -v docker compose &> /dev/null; then
+  set +e
+  docker compose up -d --build
+  STATUS=$?
+  if [ $STATUS -ne 0 ] && [ "$ARCH" = "aarch64" ]; then
+    echo "⚠️  Compose failed. Retrying with amd64 default platform for compatibility..."
+    export DOCKER_DEFAULT_PLATFORM=linux/amd64
+    docker compose up -d --build
+  fi
+  set -e
+else
+  docker-compose up -d --build
+fi
 
 # Wait for services to be ready
 echo "⏳ Waiting for services to be ready..."
@@ -67,9 +94,15 @@ sleep 30
 
 # Check service health
 echo "🏥 Checking service health..."
-backend_healthy=$(docker-compose ps backend | grep -c "healthy" || echo "0")
-frontend_healthy=$(docker-compose ps frontend | grep -c "healthy" || echo "0")
-db_healthy=$(docker-compose ps db | grep -c "healthy" || echo "0")
+if command -v docker compose &> /dev/null; then
+  backend_healthy=$(docker compose ps backend | grep -c "healthy" || echo "0")
+  frontend_healthy=$(docker compose ps frontend | grep -c "healthy" || echo "0")
+  db_healthy=$(docker compose ps db | grep -c "healthy" || echo "0")
+else
+  backend_healthy=$(docker-compose ps backend | grep -c "healthy" || echo "0")
+  frontend_healthy=$(docker-compose ps frontend | grep -c "healthy" || echo "0")
+  db_healthy=$(docker-compose ps db | grep -c "healthy" || echo "0")
+fi
 
 if [ "$backend_healthy" -eq "0" ]; then
     echo "⚠️  Backend service may not be healthy. Check logs with: docker-compose logs backend"
@@ -103,7 +136,11 @@ fi
 # Display service status
 echo ""
 echo "📊 Service Status:"
-docker-compose ps
+if command -v docker compose &> /dev/null; then
+  docker compose ps
+else
+  docker-compose ps
+fi
 
 echo ""
 echo "🎉 Deployment completed successfully!"
@@ -114,9 +151,9 @@ echo "   API Documentation: http://localhost:8080/docs"
 echo "   API Health Check: http://localhost:8080/health"
 echo ""
 echo "🔧 Useful commands:"
-echo "   View logs: docker-compose logs -f [service_name]"
-echo "   Stop services: docker-compose down"
-echo "   Restart services: docker-compose restart"
-echo "   Update services: docker-compose pull && docker-compose up -d"
+echo "   View logs: docker compose logs -f [service_name]"
+echo "   Stop services: docker compose down"
+echo "   Restart services: docker compose restart"
+echo "   Update services: docker compose pull && docker compose up -d"
 echo ""
 echo "⚠️  Important: Make sure to configure your firewall and SSL certificates for production use!"

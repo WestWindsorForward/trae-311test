@@ -1,8 +1,6 @@
-version: "3.9"
 services:
   db:
-    image: postgis/postgis:15-3.4
-    platform: ${DOCKER_PLATFORM:-linux/arm64/v8}
+    image: postgis/postgis:${POSTGIS_IMAGE_TAG:-15-3.3}
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-311_user}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-311_password}
