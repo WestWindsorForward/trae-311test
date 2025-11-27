@@ -40,3 +40,8 @@ class Settings(BaseSettings):
         env_file = ".env"
 
 settings = Settings()
+
+# Apply CORS origins from env (comma-separated) if provided
+_cors_env = os.getenv("CORS_ORIGINS")
+if _cors_env:
+    settings.cors_origins = [o.strip() for o in _cors_env.split(",") if o.strip()]

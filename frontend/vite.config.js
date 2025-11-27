@@ -7,7 +7,7 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     strictPort: true,
-    allowedHosts: ['311.westwindsorforward.org']
+    allowedHosts: [process.env.DOMAIN || 'localhost']
   },
   build: {
     outDir: 'dist',
