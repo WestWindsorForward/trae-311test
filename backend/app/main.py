@@ -74,6 +74,11 @@ async def health():
     """Health check endpoint"""
     return {"status": "ok", "service": "township-311-api"}
 
+@app.get("/api/health")
+async def api_health():
+    """Health check endpoint behind Caddy /api proxy"""
+    return {"status": "ok", "service": "township-311-api"}
+
 @app.get("/")
 async def root():
     """Root endpoint"""

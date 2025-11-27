@@ -12,7 +12,7 @@ class AuditService:
             action=action,
             entity_type=entity_type,
             entity_id=entity_id,
-            metadata=json.dumps(metadata or {})
+            details=json.dumps(metadata or {})
         )
         self.db.add(event)
         await self.db.commit()

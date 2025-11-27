@@ -142,7 +142,7 @@ class AuditEvent(Base):
     action = Column(String, nullable=False)
     entity_type = Column(String, nullable=False)
     entity_id = Column(Integer, nullable=False)
-    metadata = Column(Text, nullable=True)
+    details = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     actor = relationship("User")
 
