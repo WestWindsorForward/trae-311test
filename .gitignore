@@ -14,3 +14,4 @@ infrastructure/caddy_data/
 infrastructure/caddy_config/
 infrastructure/storage_data/
 flags/
+infrastructure/watch_updates.log
