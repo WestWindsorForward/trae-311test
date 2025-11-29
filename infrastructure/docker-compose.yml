@@ -1,13 +1,10 @@
 services:
   db:
     image: postgis/postgis:${POSTGIS_IMAGE_TAG:-15-3.3}
-    platform: ${DB_PLATFORM:-}
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-311_user}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-311_password}
       - POSTGRES_DB=${POSTGRES_DB:-township_311}
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -18,15 +15,11 @@ services:
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redisdata:/data
 
   clamav:
     image: mkodockx/docker-clamav:alpine
-    ports:
-      - "${CLAMAV_PORT:-3310}:3310"
     volumes:
       - clamavdb:/var/lib/clamav
 
@@ -60,8 +53,6 @@ services:
   frontend:
     build:
       context: ../frontend
-    ports:
-      - "${FRONTEND_PORT:-5173}:5173"
     environment:
       - VITE_API_BASE=${VITE_API_BASE:-/api}
       - DOMAIN=${DOMAIN:-}
